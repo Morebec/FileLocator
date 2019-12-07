@@ -1,0 +1,40 @@
+{
+    "name": "morebec/file-locator",
+    "description": "The FileLocator Component find files by their name using different strategies, such as recursive parent traversal, recursive (downward) traversal and at location",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "jwillp",
+            "email": "jwilliam.perreault@morebec.com"
+        }
+    ],
+    "config": {
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
+    "repositories": [
+        {
+            "url": "https://github.com/Morebec/ValueObjects.git",
+            "type": "git"
+        }
+    ],
+    "require": {
+        "symfony/finder": "^5.0",
+        "morebec/value-objects": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Morebec\\FileLocator\\": "src/"
+        }
+    },
+
+    "scripts": {
+        "test": "vendor/bin/phpunit --bootstrap vendor/autoload.php tests"
+    }
+}

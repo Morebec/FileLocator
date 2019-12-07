@@ -1,0 +1,26 @@
+FileLocatorInterface:
+  desc: File locator interface
+  type: interface
+  use:
+    - Morebec\ValueObjects\File\Directory
+  methods:
+    find:
+      desc: |
+        Tries to find a file starting at a specific location 
+        by using a strategy. Stops at the first found occurence of the file.
+        RECURSIVE_UP => Tries to find a file in the cwd, and if not found goes one level up
+        RECURSIVE_DOWN => Tries to find a file in the cwd, and if not found goes one level down
+        AT_LOCATION => Tries to find a file only in the current directory
+      params:
+        filename:
+          desc: Name of the file to find
+          type: string
+        location:
+          desc: Starting location for search
+          type: Directory
+        strategy:
+          desc: Strategy to use for searching
+          type: FileLocatorStrategy
+      return:
+        type: File|null
+        desc: The file if it was found, otherwise null
