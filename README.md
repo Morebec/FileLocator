@@ -1,4 +1,6 @@
 # FileLocator
+[![Build Status](https://travis-ci.com/Morebec/FileLocator.svg?branch=master)](https://travis-ci.com/Morebec/FileLocator)
+
 The FileLocator Component allows one to locate files using different strategies.
 This is mostly useful to find configuration files or project roots, e.g. trying to find a possibly near `composer.json` file.
 
