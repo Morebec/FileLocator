@@ -12,88 +12,102 @@ use Symfony\Component\Finder\Finder;
  * The file locator allows one to find files
  * recursively by going either up or down in a hirarchy
  */
-class FileLocator
+class FileLocator implements FileLocatorInterface
 {
+    /**
+     * @inheritDoc
+     */
     public function find(
             string $filename, 
             Directory $location, 
-            FileLocatorStrategy $strategy
+            FileLocatorStrategy $strategy,
+            ?int $maxDepth = null
     ): ?File 
+    {
+        $files = $this->findAll($filename, $location, $strategy, $maxDepth);
+        return count($files) ? $files[0] : null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function findAll(
+        string $filename,
+        Directory $location,
+        FileLocatorStrategy $strategy,
+        ?int $maxDepth = null
+    ): array
     {
         if (!$location->exists()) {
             throw new InvalidArgumentException("Location '$location' does not exists");
         }
 
         if($strategy == FileLocatorStrategy::RECURSIVE_UP) {
-            return $this->findUp($filename, $location);
+            return $this->findUp($filename, $location, $maxDepth);
         }
-        
+
         if($strategy == FileLocatorStrategy::RECURSIVE_DOWN) {
-            return $this->findDown($filename, $location);
+            return $this->findDown($filename, $location, $maxDepth);
         }
-        
-        if($strategy == FileLocatorStrategy::AT_LOCATION) {
-            return $this->findAtLocation ($filename, $location);
+
+        if($strategy == FileLocatorStrategy::RECURSIVE_BOTH()) {
+            $filesUp = $this->findAll($filename, $location, FileLocatorStrategy::RECURSIVE_UP(), $maxDepth);
+            $filesDown = $this->findAll($filename, $location, FileLocatorStrategy::RECURSIVE_DOWN(), $maxDepth);
+            return array_merge($filesUp, $filesDown);
         }
-        
-        throw new Exception("Strategy '$strategy' not implemented");
+
+        throw new StrategyNotImplementedException($strategy);
     }
-    
-    /**
-     * Tries to find a file at a specific location without going up or 
-     * down the file tree
-     * @param string $filename
-     * @param Directory $location
-     * @return File|null
-     */
-    private function findAtLocation(string $filename, Directory $location): ?File
-    {
-        foreach($location->getFiles() as $file) {
-            if($file->getBasename() === $filename) {
-                return $file;
-            }
-        }
-        
-        return null;
-    }
-    
+
+
     /**
      * Tries to find a file at a specific location
      * and going up the parents recursively until it finds the first occurence
      * @param string $filename
      * @param Directory $location
-     * @return File|null
+     * @param int|null $maxDepth
+     * @return array
+     * @throws Exception
      */
-    private function findUp(string $filename, Directory $location): ?File
+    private function findUp(string $filename, Directory $location, ?int $maxDepth): array
     {
-        $file = null;
-        while (!$file) {
+        $files = [];
+        $currentDepth = 0;
+        while (true) {
             // find composer.json in current dir
             $candidate = File::fromStringPath(
                 "$location/$filename"
             );
+
             if ($candidate->exists()) {
-                return $candidate;
+                $files[] = $candidate;
             }
-            
-            $parent = $location->getDirectory();
+
+            // Are we at max depth
+            if($currentDepth === $maxDepth) {
+                break;
+            }
+            $currentDepth++;
+
             // Are we up at maximum ?
+            $parent = $location->getDirectory();
             if ($parent->isEqualTo($location)) {
                 break;
             }
             $location = $parent;
         }
-        return $file;
+        return $files;
     }
-    
+
     /**
      * Tries to find a file at a specific location
      * and going down recursively until it finds the first occurence
      * @param string $filename
      * @param Directory $location
-     * @return File|null
+     * @param int|null $maxDepth
+     * @return array
      */
-    private function findDown(string $filename, Directory $location): ?File
+    private function findDown(string $filename, Directory $location, ?int $maxDepth): array
     {
         $finder = new Finder();
         
@@ -102,10 +116,15 @@ class FileLocator
                ->files()
                ->followLinks()
                ->name($filename);
-        foreach($files as $f) {
-            return File::fromStringPath((string)$f);
+
+        if($maxDepth) {
+            $files = $files->depth($maxDepth);
         }
-        
-        return null;
+
+        $retFiles = [];
+        foreach($files as $f) {
+            $retFiles[] = File::fromStringPath((string)$f);
+        }
+        return $retFiles;
     }
 }
